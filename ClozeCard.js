@@ -1,38 +1,43 @@
-var fs = require('fs');
-var inquirer = require('inquirer');
+function ClozeCard(text, clozeDeletion) {
 
-function ClozeFlashcard(text, cloze){
-	this.cloze = cloze;
-	this.partial = partial;
-	this.clozeDeleted = cloze + ' ' + partial;
+  // This code allows us to optionally create ClozeCards without using the new keyword
+  if (!(this instanceof ClozeCard)) {
+    return new ClozeCard(text, clozeDeletion);
+  }
+
+  // Holds [start, end] positions for clozeDeletion.
+  var clozePostions = clozeDelete(text, clozeDeletion);
+
+  // Builds "partial" text--e.g., input text without cloze deletion
+  this.partial = getPartial(text, clozePostions);
+
+  // Saves the cloze deleted text for later display
+  this.cloze = text.slice(clozePostions[0], clozePostions[1]);
+
+  // "Pseudo-private" functions, purposefully not on the prototype.
+  function getPartial(text, clozePostions) {
+
+    // Find where cloze deletion begins in text
+    var start = text.slice(0, clozePostions[0]);
+    // Remove cloze range
+    var end = text.slice(clozePostions[1], text.length);
+
+    // Return ellipsized version
+    return start + "..." + end;
+  }
+
+  function clozeDelete(text, clozeDeletion) {
+    var start = text.indexOf(clozeDeletion);
+
+    if (start !== -1) {
+      return [start, start + clozeDeletion.length];
+    }
+    throw new Error("Cloze deletion not found in input text.");
+  }
 }
 
-ClozeFlashcard.prototype.printInfo = function(){
-	console.log('Text: ' + this.text + 'Partial: ' + this.partial + 'Cloze Deleted: ' + this.clozeDeleted);
+ClozeCard.prototype.displayCard = function displayCard() {
+  return this.partial.replace(/\.\.\./, "'" + this.cloze + "'");
 };
 
-var answersRight = 0;
-var answersWrong = 0;
-var carArr = [];
-
-var clozeFlashcard = function(){
-	if(answersRight < 1){
-		inquirer.prompt([
-		{
-			name: 'Cloze',
-			message: '....is the first president of the United States.'
-		},{
-			name: 'partial',
-			message: 'George Washington'
-		}]).then(function(answers){
-			var firstPres = new clozeFlashcard(answers.cloze, answers.partial, answers.clozeDeleted);
-			carArr.push(firstPres);
-			answersRight++
-		});
-	}
-};
-
-clozeFlashcard();
-
-module.exports = ClozeFlashcard;
-
+module.exports = ClozeCard;
